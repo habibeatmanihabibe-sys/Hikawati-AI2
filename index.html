@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#17152b">
+<title>حكاواتي AI</title>
+<style>
+:root{color-scheme:dark;--bg:#11101d;--panel:#1d1b30;--panel2:#27243d;--ink:#f8f5ff;--muted:#b8b2cc;--accent:#a78bfa;--pink:#f0abfc;--line:#39344f}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 85% 0,#30234d 0,transparent 35%),var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;padding:16px 14px 40px}
+main{max-width:760px;margin:auto}.top{display:flex;align-items:center;gap:12px;margin:8px 0 20px}.logo{width:48px;height:48px;border-radius:16px;background:linear-gradient(135deg,#a78bfa,#ec4899);display:grid;place-items:center;font-size:25px}.top h1{font-size:23px;margin:0}.top p{margin:2px 0 0;color:var(--muted);font-size:13px}
+.panel{background:rgba(29,27,48,.95);border:1px solid var(--line);border-radius:19px;padding:15px;margin:13px 0;box-shadow:0 12px 30px #0002}
+h2{font-size:17px;margin:0 0 12px}label{display:block;color:var(--muted);font-size:13px;margin:10px 0 6px}
+textarea,input,select{width:100%;border:1px solid var(--line);border-radius:12px;background:#131222;color:var(--ink);padding:12px;font:inherit;font-size:15px}textarea{min-height:125px;resize:vertical}
+button{border:0;border-radius:12px;padding:12px 15px;font:inherit;font-weight:700;cursor:pointer;background:linear-gradient(120deg,#8b5cf6,#c084fc);color:white}
+button.secondary{background:var(--panel2);border:1px solid var(--line)}button:disabled{opacity:.45}
+.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:12px}.actions button{flex:1}
+.small{font-size:12px;color:var(--muted);line-height:1.6}.scene{border:1px solid var(--line);border-radius:16px;padding:12px;margin-top:12px;background:#171526}
+.scenehead{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}.scenehead strong{font-size:14px}
+.previewwrap{width:min(100%,300px);margin:12px auto 4px;aspect-ratio:9/16;background:#080711;border-radius:16px;overflow:hidden;position:relative;border:1px solid #51466f}
+.previewwrap img{width:100%;height:100%;object-fit:cover;transform-origin:center;display:none}
+.previewwrap .placeholder{position:absolute;inset:0;display:grid;place-items:center;text-align:center;color:#aaa;font-size:14px;padding:20px}
+.subtitle{position:absolute;bottom:8%;left:5%;right:5%;text-align:center;background:#000a;color:white;padding:10px 8px;border-radius:8px;font-size:15px;line-height:1.5;text-shadow:0 1px 2px #000;white-space:pre-wrap}
+.control{display:grid;grid-template-columns:1fr 48px;align-items:center;gap:8px;margin-top:9px}.control input{padding:0;accent-color:#a78bfa}.control output{font-size:12px;color:var(--muted);text-align:left}
+hr{border:0;border-top:1px solid var(--line);margin:14px 0}.notice{padding:10px;border-radius:10px;background:#302849;color:#e9ddff;font-size:12px;line-height:1.6}
+footer{text-align:center;color:#918aa7;font-size:12px;padding:20px}
+</style>
+</head>
+<body>
+<main>
+<header class="top"><div class="logo">📖</div><div><h1>حكاواتي AI</h1><p>حوّل قصتك إلى مشاهد تحكيها بطريقتك</p></div></header>
+<section class="panel">
+<h2>✍️ اكتب قصتك</h2>
+<textarea id="story" placeholder="اكتب قصتك هنا... افصل بين المشاهد بسطر فارغ."></textarea>
+<div class="actions"><button id="split">قسّم القصة إلى مشاهد</button><button class="secondary" id="save">حفظ المسودة</button></div>
+<p class="small">كل فقرة مفصولة بسطر فارغ تصبح مشهداً مستقلاً. يمكنك تعديل نص كل مشهد بعد ذلك.</p>
+</section>
+<section class="panel">
+<h2>🎬 معاينة الفيديو العمودي</h2>
+<div class="previewwrap" id="preview"><img id="previewImg" alt="صورة المشهد"><div class="placeholder" id="placeholder">اختر صورة للمشهد<br>لتظهر هنا المعاينة</div><div class="subtitle" id="subtitle">نص المشهد سيظهر هنا</div></div>
+<div class="actions"><button class="secondary" id="prev">السابق</button><button class="secondary" id="next">التالي</button></div>
+<div id="sceneInfo" class="small" style="text-align:center;margin-top:8px">لا توجد مشاهد بعد</div>
+</section>
+<section class="panel">
+<h2>🧩 المشاهد</h2><div id="scenes"><p class="small">اكتب قصة ثم اضغط على «قسّم القصة إلى مشاهد».</p></div>
+</section>
+<section class="panel">
+<h2>🔊 قراءة المشهد</h2>
+<label for="lang">لغة القراءة</label><select id="lang"><option value="ar-MA">العربية</option><option value="fr-FR">Français</option><option value="en-US">English</option></select>
+<label for="voice">الصوت المتاح على هاتفك</label><select id="voice"><option value="">الصوت الافتراضي</option></select>
+<div class="actions"><button id="speak">▶️ اقرأ هذا المشهد</button><button class="secondary" id="stop">إيقاف الصوت</button></div>
+<p class="small">الأصوات المتاحة كتختلف حسب الهاتف واللغات المثبتة فيه.</p>
+</section>
+<div class="notice">هذه نسخة أولية للتجربة. حفظ المسودات محلياً في نفس المتصفح. تصدير فيديو MP4 لم يُضف بعد؛ لن ندّعي أن التصدير يعمل قبل بناء واختبار طريقة حقيقية له.</div>
+<footer>حكاواتي AI · نسخة تجريبية أولى</footer>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+let scenes=[],active=0,voices=[];
+function render(){
+ const host=$('scenes');host.innerHTML='';
+ if(!scenes.length){host.innerHTML='<p class="small">لا توجد مشاهد بعد.</p>';updatePreview();return}
+ scenes.forEach((s,i)=>{
+  const card=document.createElement('div');card.className='scene';
+  const head=document.createElement('div');head.className='scenehead';
+  const title=document.createElement('strong');title.textContent='المشهد '+(i+1);
+  const pick=document.createElement('button');pick.className='secondary';pick.textContent='اختيار صورة';
+  const file=document.createElement('input');file.type='file';file.accept='image/*';file.hidden=true;
+  pick.onclick=()=>file.click();
+  file.onchange=()=>{const f=file.files[0];if(!f)return;if(s.url)URL.revokeObjectURL(s.url);s.url=URL.createObjectURL(f);s.zoom=1;s.x=50;s.y=50;render()};
+  head.append(title,pick);card.append(head,file);
+  const txt=document.createElement('textarea');txt.value=s.text;txt.setAttribute('aria-label','نص المشهد '+(i+1));txt.oninput=()=>{s.text=txt.value;if(i===active)updatePreview()};card.append(txt);
+  const imageState=document.createElement('p');imageState.className='small';imageState.textContent=s.url?'تم اختيار صورة لهذا المشهد':'لم يتم اختيار صورة بعد';card.append(imageState);
+  const addControl=(label,key,min,max,step)=>{
+   const l=document.createElement('label');l.textContent=label;card.append(l);
+   const wrap=document.createElement('div');wrap.className='control';
+   const range=document.createElement('input');range.type='range';range.min=min;range.max=max;range.step=step;range.value=s[key];
+   const out=document.createElement('output');out.textContent=key==='zoom'?Number(s[key]).toFixed(1)+'×':s[key]+'%';
+   range.oninput=()=>{s[key]=Number(range.value);out.textContent=key==='zoom'?s[key].toFixed(1)+'×':s[key]+'%';if(i===active)updatePreview()};
+   wrap.append(range,out);card.append(wrap);
+  };
+  addControl('تكبير / تصغير','zoom',1,3,.1);addControl('تحريك أفقي','x',0,100,1);addControl('تحريك عمودي','y',0,100,1);
+  const row=document.createElement('div');row.className='actions';
+  const show=document.createElement('button');show.className='secondary';show.textContent=i===active?'المشهد الحالي':'عرض المشهد';show.onclick=()=>{active=i;updatePreview();render()};
+  const del=document.createElement('button');del.className='secondary';del.textContent='حذف';del.onclick=()=>{if(s.url)URL.revokeObjectURL(s.url);scenes.splice(i,1);active=Math.min(active,scenes.length-1);render()};
+  row.append(show,del);card.append(row);host.append(card);
+ });
+ updatePreview();
+}
+function updatePreview(){
+ const s=scenes[active],img=$('previewImg'),ph=$('placeholder');
+ if(!s){img.style.display='none';ph.style.display='grid';$('subtitle').textContent='نص المشهد سيظهر هنا';$('sceneInfo').textContent='لا توجد مشاهد بعد';return}
+ $('subtitle').textContent=s.text; $('sceneInfo').textContent='المشهد '+(active+1)+' من '+scenes.length;
+ if(s.url){img.src=s.url;img.style.display='block';ph.style.display='none';img.style.transform='scale('+s.zoom+')';img.style.objectPosition=s.x+'% '+s.y+'%';img.style.objectFit='cover';img.style.transformOrigin=s.x+'% '+s.y+'%'}
+ else{img.style.display='none';ph.style.display='grid'}
+}
+$('split').onclick=()=>{const parts=$('story').value.split(/\n\s*\n/).map(x=>x.trim()).filter(Boolean);if(!parts.length){alert('اكتب القصة أولاً.');return}scenes.forEach(s=>s.url&&URL.revokeObjectURL(s.url));scenes=parts.map(text=>({text,url:null,zoom:1,x:50,y:50}));active=0;render()};
+$('prev').onclick=()=>{if(scenes.length){active=Math.max(0,active-1);updatePreview();render()}};
+$('next').onclick=()=>{if(scenes.length){active=Math.min(scenes.length-1,active+1);updatePreview();render()}};
+$('save').onclick=()=>{try{localStorage.setItem('hikawatiDraft',JSON.stringify({story:$('story').value,scenes:scenes.map(s=>({text:s.text,zoom:s.zoom,x:s.x,y:s.y}))}));alert('تحفظات المسودة والنصوص والإعدادات. الصور خاصك تعاود تختارها من الهاتف عند الاسترجاع.')}catch(e){alert('تعذر حفظ المسودة في هذا المتصفح.')}};
+function loadDraft(){try{const d=JSON.parse(localStorage.getItem('hikawatiDraft')||'null');if(d){$('story').value=d.story||'';scenes=(d.scenes||[]).map(s=>({...s,url:null}));render()}}catch(e){}}
+function loadVoices(){voices=speechSynthesis.getVoices();const sel=$('voice');sel.innerHTML='<option value="">الصوت الافتراضي</option>';voices.forEach((v,i)=>{const o=document.createElement('option');o.value=String(i);o.textContent=v.name+' ('+v.lang+')';sel.append(o)})}
+$('speak').onclick=()=>{const s=scenes[active];if(!s||!s.text.trim()){alert('ما كاينش نص باش نقرا.');return}if(!('speechSynthesis'in window)){alert('القراءة الصوتية غير مدعومة في هذا المتصفح.');return}speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(s.text);u.lang=$('lang').value;const v=voices[Number($('voice').value)];if(v)u.voice=v;speechSynthesis.speak(u)};
+$('stop').onclick=()=>speechSynthesis.cancel();
+if('speechSynthesis'in window){loadVoices();speechSynthesis.onvoiceschanged=loadVoices}
+loadDraft();
+</script>
+</body></html>
