@@ -36,6 +36,13 @@ footer{text-align:center;color:#918aa7;font-size:12px;padding:20px}
 <p class="small">كل فقرة مفصولة بسطر فارغ تصبح مشهداً مستقلاً. يمكنك تعديل نص كل مشهد بعد ذلك.</p>
 </section>
 <section class="panel">
+<h2>🖼️ غلاف القصة</h2>
+<label for="coverFile">صورة البداية / غلاف الفيديو</label>
+<input id="coverFile" type="file" accept="image/*">
+<p class="small">هذه الصورة تظهر في بداية الفيديو مثل غلاف الكتاب، قبل المشهد الأول.</p>
+<div id="coverStatus" class="small">لم يتم اختيار غلاف بعد.</div>
+</section>
+<section class="panel">
 <h2>🎬 معاينة الفيديو العمودي</h2>
 <div class="previewwrap" id="preview"><img id="previewImg" alt="صورة المشهد"><div class="placeholder" id="placeholder">اختر صورة للمشهد<br>لتظهر هنا المعاينة</div><div class="subtitle" id="subtitle">نص المشهد سيظهر هنا</div></div>
 <div class="actions"><button class="secondary" id="prev">السابق</button><button class="secondary" id="next">التالي</button></div>
@@ -48,15 +55,23 @@ footer{text-align:center;color:#918aa7;font-size:12px;padding:20px}
 <h2>🔊 قراءة المشهد</h2>
 <label for="lang">لغة القراءة</label><select id="lang"><option value="ar-MA">العربية</option><option value="fr-FR">Français</option><option value="en-US">English</option></select>
 <label for="voice">الصوت المتاح على هاتفك</label><select id="voice"><option value="">الصوت الافتراضي</option></select>
-<div class="actions"><button id="speak">▶️ اقرأ هذا المشهد</button><button class="secondary" id="stop">إيقاف الصوت</button></div>
+<div class="actions"><button id="speak">▶️ اقرأ هذا المشهد</button><button id="speakAll">📚 اقرأ جميع المشاهد</button></div>
+<div class="actions"><button class="secondary" id="pauseRead">إيقاف مؤقت</button><button class="secondary" id="resumeRead">متابعة القراءة</button><button class="secondary" id="stop">إيقاف الصوت</button></div>
 <p class="small">الأصوات المتاحة كتختلف حسب الهاتف واللغات المثبتة فيه.</p>
 </section>
-<div class="notice">هذه نسخة أولية للتجربة. حفظ المسودات محلياً في نفس المتصفح. تصدير فيديو MP4 لم يُضف بعد؛ لن ندّعي أن التصدير يعمل قبل بناء واختبار طريقة حقيقية له.</div>
+<section class="panel">
+<h2>🎞️ إنتاج الفيديو النهائي</h2>
+<p class="small">يجمع الغلاف ثم صور المشاهد بالترتيب في فيديو عمودي. سيخبرك التطبيق بصيغة الملف التي يدعمها هاتفك.</p>
+<div class="actions"><button id="makeVideo">إنتاج الفيديو الكامل</button></div>
+<div id="exportStatus" class="small" role="status"></div>
+</section>
+<div class="notice">تنبيه: القراءة الصوتية المتتابعة تعمل داخل التطبيق. تسجيل الصوت داخل ملف الفيديو وتصدير MP4 يعتمدان على دعم المتصفح؛ لن نعرض MP4 على أنه جاهز إذا كان الهاتف لا يدعمه.</div>
 <footer>حكاواتي AI · نسخة تجريبية أولى</footer>
 </main>
 <script>
 const $=id=>document.getElementById(id);
-let scenes=[],active=0,voices=[];
+let scenes=[],active=0,voices=[],coverData='';
+let readingAll=false;
 function render(){
  const host=$('scenes');host.innerHTML='';
  if(!scenes.length){host.innerHTML='<p class="small">لا توجد مشاهد بعد.</p>';updatePreview();return}
@@ -67,7 +82,7 @@ function render(){
   const pick=document.createElement('button');pick.className='secondary';pick.textContent='اختيار صورة';
   const file=document.createElement('input');file.type='file';file.accept='image/*';file.hidden=true;
   pick.onclick=()=>file.click();
-  file.onchange=()=>{const f=file.files[0];if(!f)return;if(s.url)URL.revokeObjectURL(s.url);s.url=URL.createObjectURL(f);s.zoom=1;s.x=50;s.y=50;render()};
+  file.onchange=()=>{const f=file.files[0];if(!f)return;const reader=new FileReader();reader.onload=()=>{s.url=reader.result;s.zoom=1;s.x=50;s.y=50;render()};reader.readAsDataURL(f)};
   head.append(title,pick);card.append(head,file);
   const txt=document.createElement('textarea');txt.value=s.text;txt.setAttribute('aria-label','نص المشهد '+(i+1));txt.oninput=()=>{s.text=txt.value;if(i===active)updatePreview()};card.append(txt);
   const imageState=document.createElement('p');imageState.className='small';imageState.textContent=s.url?'تم اختيار صورة لهذا المشهد':'لم يتم اختيار صورة بعد';card.append(imageState);
@@ -97,11 +112,35 @@ function updatePreview(){
 $('split').onclick=()=>{const parts=$('story').value.split(/\n\s*\n/).map(x=>x.trim()).filter(Boolean);if(!parts.length){alert('اكتب القصة أولاً.');return}scenes.forEach(s=>s.url&&URL.revokeObjectURL(s.url));scenes=parts.map(text=>({text,url:null,zoom:1,x:50,y:50}));active=0;render()};
 $('prev').onclick=()=>{if(scenes.length){active=Math.max(0,active-1);updatePreview();render()}};
 $('next').onclick=()=>{if(scenes.length){active=Math.min(scenes.length-1,active+1);updatePreview();render()}};
-$('save').onclick=()=>{try{localStorage.setItem('hikawatiDraft',JSON.stringify({story:$('story').value,scenes:scenes.map(s=>({text:s.text,zoom:s.zoom,x:s.x,y:s.y}))}));alert('تحفظات المسودة والنصوص والإعدادات. الصور خاصك تعاود تختارها من الهاتف عند الاسترجاع.')}catch(e){alert('تعذر حفظ المسودة في هذا المتصفح.')}};
-function loadDraft(){try{const d=JSON.parse(localStorage.getItem('hikawatiDraft')||'null');if(d){$('story').value=d.story||'';scenes=(d.scenes||[]).map(s=>({...s,url:null}));render()}}catch(e){}}
+$('save').onclick=()=>{try{localStorage.setItem('hikawatiDraft',JSON.stringify({story:$('story').value,coverData,scenes:scenes.map(s=>({text:s.text,url:s.url,zoom:s.zoom,x:s.x,y:s.y}))}));alert('تحفظات القصة والغلاف وصور المشاهد في هذا المتصفح.')}catch(e){alert('مساحة التخزين غير كافية لحفظ الصور. جرّب صوراً أصغر.')}};
+$('coverFile').onchange=()=>{const f=$('coverFile').files[0];if(!f)return;const reader=new FileReader();reader.onload=()=>{coverData=reader.result;$('coverStatus').textContent='تم اختيار غلاف القصة.';try{localStorage.setItem('hikawatiCover',coverData)}catch(e){}};reader.readAsDataURL(f)};
+function loadDraft(){try{const d=JSON.parse(localStorage.getItem('hikawatiDraft')||'null');if(d){$('story').value=d.story||'';coverData=d.coverData||localStorage.getItem('hikawatiCover')||'';$('coverStatus').textContent=coverData?'تم استرجاع غلاف القصة.':'لم يتم اختيار غلاف بعد.';scenes=(d.scenes||[]).map(s=>({...s,url:s.url||null}));render()}}catch(e){}}
 function loadVoices(){voices=speechSynthesis.getVoices();const sel=$('voice');sel.innerHTML='<option value="">الصوت الافتراضي</option>';voices.forEach((v,i)=>{const o=document.createElement('option');o.value=String(i);o.textContent=v.name+' ('+v.lang+')';sel.append(o)})}
-$('speak').onclick=()=>{const s=scenes[active];if(!s||!s.text.trim()){alert('ما كاينش نص باش نقرا.');return}if(!('speechSynthesis'in window)){alert('القراءة الصوتية غير مدعومة في هذا المتصفح.');return}speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(s.text);u.lang=$('lang').value;const v=voices[Number($('voice').value)];if(v)u.voice=v;speechSynthesis.speak(u)};
-$('stop').onclick=()=>speechSynthesis.cancel();
+function makeUtterance(text){return new Promise((resolve,reject)=>{const u=new SpeechSynthesisUtterance(text);u.lang=$('lang').value;const v=voices[Number($('voice').value)];if(v)u.voice=v;u.onend=resolve;u.onerror=()=>reject(new Error('تعذرت قراءة هذا المشهد'));speechSynthesis.speak(u)})}
+$('speak').onclick=()=>{const s=scenes[active];if(!s||!s.text.trim()){alert('ما كاينش نص باش نقرا.');return}if(!('speechSynthesis'in window)){alert('القراءة الصوتية غير مدعومة.');return}speechSynthesis.cancel();makeUtterance(s.text).catch(e=>alert(e.message))};
+$('speakAll').onclick=async()=>{if(!scenes.length){alert('قسّم القصة إلى مشاهد أولاً.');return}if(!('speechSynthesis'in window)){alert('القراءة الصوتية غير مدعومة.');return}speechSynthesis.cancel();readingAll=true;for(let i=0;i<scenes.length&&readingAll;i++){active=i;updatePreview();render();try{await makeUtterance(scenes[i].text)}catch(e){readingAll=false;alert(e.message);break}}readingAll=false};
+$('pauseRead').onclick=()=>{if('speechSynthesis'in window)speechSynthesis.pause()};
+$('resumeRead').onclick=()=>{if('speechSynthesis'in window)speechSynthesis.resume()};
+$('stop').onclick=()=>{readingAll=false;if('speechSynthesis'in window)speechSynthesis.cancel()};
+
+function loadImage(src){return new Promise((resolve,reject)=>{const im=new Image();im.onload=()=>resolve(im);im.onerror=reject;im.src=src})}
+$('makeVideo').onclick=async()=>{
+ if(!scenes.length){alert('قسّم القصة إلى مشاهد أولاً.');return}
+ if(!window.MediaRecorder||!HTMLCanvasElement.prototype.captureStream){alert('متصفح الهاتف لا يدعم إنتاج الفيديو هنا.');return}
+ const candidates=['video/mp4;codecs=avc1.42E01E','video/mp4','video/webm;codecs=vp9','video/webm'];
+ const mime=candidates.find(t=>MediaRecorder.isTypeSupported(t));
+ if(!mime){alert('هذا المتصفح لا يدعم صيغة فيديو قابلة للتصدير.');return}
+ const canvas=document.createElement('canvas');canvas.width=720;canvas.height=1280;const ctx=canvas.getContext('2d');
+ const stream=canvas.captureStream(25);let recorder;const chunks=[];
+ try{
+  recorder=new MediaRecorder(stream,{mimeType:mime});recorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};
+  const stopped=new Promise(resolve=>recorder.onstop=resolve);recorder.start();
+  const draw=async(src,text)=>{ctx.fillStyle='#090817';ctx.fillRect(0,0,720,1280);if(src){const im=await loadImage(src);const scale=Math.max(720/im.width,1280/im.height);const w=im.width*scale,h=im.height*scale;ctx.drawImage(im,(720-w)/2,(1280-h)/2,w,h)}ctx.fillStyle='#0009';ctx.fillRect(30,1010,660,210);ctx.fillStyle='#fff';ctx.textAlign='center';ctx.direction='rtl';ctx.font='bold 38px sans-serif';const words=(text||'').split(/\s+/);let line='',lines=[];for(const word of words){const test=line?line+' '+word:word;if(ctx.measureText(test).width>610&&line){lines.push(line);line=word}else line=test}if(line)lines.push(line);lines.slice(0,4).forEach((ln,j)=>ctx.fillText(ln,360,1065+j*48));};
+  if(coverData){await draw(coverData,$('story').value.split(/\n/)[0]||'حكاواتي AI');await new Promise(r=>setTimeout(r,2200))}
+  for(let i=0;i<scenes.length;i++){await draw(scenes[i].url,scenes[i].text);$('exportStatus').textContent='إعداد المشهد '+(i+1)+' من '+scenes.length;await new Promise(r=>setTimeout(r,Math.max(3000,Math.min(10000,scenes[i].text.length*90))))}
+  recorder.stop();await stopped;const ext=mime.includes('mp4')?'mp4':'webm';const blob=new Blob(chunks,{type:mime});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='hikawati-video.'+ext;a.click();setTimeout(()=>URL.revokeObjectURL(url),60000);$('exportStatus').textContent='تم إنشاء الفيديو بصيغة '+ext.toUpperCase()+'. ملاحظة: هذه النسخة تجمع الصور والنصوص دون تعليق صوتي داخل الملف.';
+ }catch(err){if(recorder&&recorder.state!=='inactive')recorder.stop();$('exportStatus').textContent='تعذر إنتاج الفيديو: '+err.message}
+};
 if('speechSynthesis'in window){loadVoices();speechSynthesis.onvoiceschanged=loadVoices}
 loadDraft();
 
