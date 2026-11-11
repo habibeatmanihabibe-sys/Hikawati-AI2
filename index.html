@@ -104,5 +104,37 @@ $('speak').onclick=()=>{const s=scenes[active];if(!s||!s.text.trim()){alert('م�
 $('stop').onclick=()=>speechSynthesis.cancel();
 if('speechSynthesis'in window){loadVoices();speechSynthesis.onvoiceschanged=loadVoices}
 loadDraft();
+
+// Progressive Web App: register the offline shell and expose Chrome's install prompt.
+if ('serviceWorker' in navigator && location.protocol === 'https:') {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(error => {
+      console.error('Hikawati service worker registration failed:', error);
+    });
+  });
+}
+
+let deferredInstallPrompt = null;
+const installButton = $('installApp');
+window.addEventListener('beforeinstallprompt', event => {
+  event.preventDefault();
+  deferredInstallPrompt = event;
+  installButton.hidden = false;
+});
+installButton.addEventListener('click', async () => {
+  if (!deferredInstallPrompt) {
+    alert('إذا لم يظهر خيار التثبيت، افتح قائمة Chrome ثم اختر «إضافة إلى الشاشة الرئيسية».');
+    return;
+  }
+  deferredInstallPrompt.prompt();
+  await deferredInstallPrompt.userChoice;
+  deferredInstallPrompt = null;
+  installButton.hidden = true;
+});
+window.addEventListener('appinstalled', () => {
+  deferredInstallPrompt = null;
+  installButton.hidden = true;
+});
+
 </script>
 </body></html>
