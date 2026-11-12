@@ -16,6 +16,8 @@ button{border:0;border-radius:12px;padding:12px 15px;font:inherit;font-weight:70
 button.secondary{background:var(--panel2);border:1px solid var(--line)}button:disabled{opacity:.45}
 .actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:12px}.actions button{flex:1}
 .small{font-size:12px;color:var(--muted);line-height:1.6}.scene{border:1px solid var(--line);border-radius:16px;padding:12px;margin-top:12px;background:#171526}
+.scene-preview{width:min(100%,220px);aspect-ratio:9/16;margin:10px auto;border-radius:13px;overflow:hidden;position:relative;background:#080711;border:1px solid #51466f}.scene-preview img{width:100%;height:100%;object-fit:cover;display:block}.scene-preview .scene-empty{position:absolute;inset:0;display:grid;place-items:center;text-align:center;color:#aaa;padding:16px;font-size:13px}.scene-preview .scene-caption{position:absolute;bottom:6%;left:5%;right:5%;padding:9px 7px;border-radius:7px;background:#000b;color:#fff;text-align:center;font-size:13px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere}
+
 .scenehead{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}.scenehead strong{font-size:14px}
 .previewwrap{width:min(100%,300px);margin:12px auto 4px;aspect-ratio:9/16;background:#080711;border-radius:16px;overflow:hidden;position:relative;border:1px solid #51466f}
 .previewwrap img{width:100%;height:100%;object-fit:cover;transform-origin:center;display:none}
@@ -84,8 +86,16 @@ function render(){
   pick.onclick=()=>file.click();
   file.onchange=()=>{const f=file.files[0];if(!f)return;const reader=new FileReader();reader.onload=()=>{s.url=reader.result;s.zoom=1;s.x=50;s.y=50;render()};reader.readAsDataURL(f)};
   head.append(title,pick);card.append(head,file);
-  const txt=document.createElement('textarea');txt.value=s.text;txt.setAttribute('aria-label','نص المشهد '+(i+1));txt.oninput=()=>{s.text=txt.value;if(i===active)updatePreview()};card.append(txt);
-  const imageState=document.createElement('p');imageState.className='small';imageState.textContent=s.url?'تم اختيار صورة لهذا المشهد':'لم يتم اختيار صورة بعد';card.append(imageState);
+  const txt=document.createElement('textarea');txt.value=s.text;txt.setAttribute('aria-label','نص المشهد '+(i+1));txt.oninput=()=>{s.text=txt.value;caption.textContent=s.text;if(i===active)updatePreview()};card.append(txt);
+  // Show each scene's own image and caption directly in its card.
+  const visual=document.createElement('div');visual.className='scene-preview';
+  const thumb=document.createElement('img');thumb.alt='صورة المشهد '+(i+1);
+  const empty=document.createElement('div');empty.className='scene-empty';empty.textContent='اختَر صورة لهذا المشهد لتظهر هنا';
+  const caption=document.createElement('div');caption.className='scene-caption';caption.textContent=s.text||'نص المشهد';
+  if(s.url){thumb.src=s.url;empty.style.display='none'}else{thumb.style.display='none'}
+  visual.append(thumb,empty,caption);visual.onclick=()=>{active=i;updatePreview();render()};
+  card.append(visual);
+  const imageState=document.createElement('p');imageState.className='small';imageState.textContent=s.url?'الصورة والنص ظاهران في معاينة هذا المشهد':'لم يتم اختيار صورة بعد';card.append(imageState);
   const addControl=(label,key,min,max,step)=>{
    const l=document.createElement('label');l.textContent=label;card.append(l);
    const wrap=document.createElement('div');wrap.className='control';
@@ -97,8 +107,9 @@ function render(){
   addControl('تكبير / تصغير','zoom',1,3,.1);addControl('تحريك أفقي','x',0,100,1);addControl('تحريك عمودي','y',0,100,1);
   const row=document.createElement('div');row.className='actions';
   const show=document.createElement('button');show.className='secondary';show.textContent=i===active?'المشهد الحالي':'عرض المشهد';show.onclick=()=>{active=i;updatePreview();render()};
+  const read=document.createElement('button');read.className='secondary';read.textContent='🔊 اقرأ هذا المشهد';read.onclick=()=>{active=i;updatePreview();if(!('speechSynthesis'in window)){alert('القراءة الصوتية غير مدعومة في هذا المتصفح.');return}speechSynthesis.cancel();makeUtterance(s.text).catch(e=>alert(e.message))};
   const del=document.createElement('button');del.className='secondary';del.textContent='حذف';del.onclick=()=>{if(s.url)URL.revokeObjectURL(s.url);scenes.splice(i,1);active=Math.min(active,scenes.length-1);render()};
-  row.append(show,del);card.append(row);host.append(card);
+  row.append(show,read,del);card.append(row);host.append(card);
  });
  updatePreview();
 }
